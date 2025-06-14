@@ -162,27 +162,44 @@ def retrieve(question: str):
     return retrieved_docs
 
 
-def build_qa_messages(question: str, context: str) -> list[str]:
-    messages = [
-    (
-        "system",
-        "You are an assistant for question-answering tasks.",
-    ),
-    (
-        "system",
-        """Use the following pieces of retrieved context to answer the question.
-        If you don't know the answer, just say that you don't know.
+def build_qa_messages(question: str, context: str, langue: str) -> list[str]:
+    # Messages système adaptés à la langue
+    langue_prompt = {
+        "Français": "Tu es un assistant IA qui répond toujours en français.",
+        "Anglais": "You are an AI assistant who always replies in English.",
+        "Espagnol": "Eres un asistente de IA que siempre responde en español.",
+        "Allemand": "Du bist ein KI-Assistent, der immer auf Deutsch antwortet."
+    }
+
+    # Prompt d’instruction adapté à la langue
+    task_prompt = {
+        "Français": """Utilise les extraits de contexte suivants pour répondre à la question.
+        Si tu ne sais pas répondre, dis que tu ne sais pas.
+        Utilise trois phrases maximum et reste concis.
+        {}""".format(context),
+        "Anglais": """Use the following pieces of context to answer the question.
+        If you don't know the answer, just say you don't know.
         Use three sentences maximum and keep the answer concise.
         {}""".format(context),
-    ),
-    (  
-        "user",
-        question
-    ),]
+        "Espagnol": """Usa los siguientes fragmentos de contexto para responder a la pregunta.
+        Si no sabes la respuesta, simplemente dilo.
+        Usa un máximo de tres frases y sé conciso.
+        {}""".format(context),
+        "Allemand": """Verwende die folgenden Kontexte, um die Frage zu beantworten.
+        Wenn du die Antwort nicht weißt, gib dies an.
+        Antworte in höchstens drei Sätzen und sei prägnant.
+        {}""".format(context),
+    }
+
+    messages = [
+        ("system", langue_prompt.get(langue, langue_prompt["Français"])),
+        ("system", task_prompt.get(langue, task_prompt["Français"])),
+        ("user", question),
+    ]
     return messages
 
 
-def answer_question(question: str) -> str:
+def answer_question(question: str, langue:str) -> str:
     """Answer a question by retrieving similar documents in the store.
 
     Args:
@@ -200,7 +217,7 @@ def answer_question(question: str) -> str:
         print("Chunk:", doc.id)
         print(doc.page_content)
         print("------")
-    messages = build_qa_messages(question, docs_content)
+    messages = build_qa_messages(question, docs_content,langue)
     response = llm.invoke(messages)
     return response.content
 
