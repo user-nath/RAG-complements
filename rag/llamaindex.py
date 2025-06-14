@@ -138,7 +138,7 @@ def get_vector_store_info():
     }
 
 
-def retrieve(question: str):
+def retrieve(question: str, top_k : int = 5):
     """Retrieve documents similar to a question.
 
     Args:
@@ -167,7 +167,7 @@ def retrieve(question: str):
     #     print('No results')
 
 
-def build_qa_messages(question: str, context: str) -> list[str]:
+def build_qa_messages(question: str, context: str, langue: str) -> list[str]:
     messages = [
     (
         "system",
@@ -175,10 +175,10 @@ def build_qa_messages(question: str, context: str) -> list[str]:
     ),
     (
         "system",
-        """Use the following pieces of retrieved context to answer the question.
+        f"""Use the following pieces of retrieved context to answer the question.
         If you don't know the answer, just say that you don't know.
         Use three sentences maximum and keep the answer concise.
-        {}""".format(context),
+        Answerin{langue}""".format(context),
     ),
     (  
         "user",
@@ -187,7 +187,7 @@ def build_qa_messages(question: str, context: str) -> list[str]:
     return messages
 
 
-def answer_question(question: str) -> str:
+def answer_question(question: str,langue: str, top_k: int=5) -> str:
     """Answer a question by retrieving similar documents in the store.
 
     Args:
@@ -196,7 +196,7 @@ def answer_question(question: str) -> str:
     Returns:
         str: text of the answer
     """
-    docs = retrieve(question)
+    docs = retrieve(question,top_k=top_k)
     docs_content = "\n\n".join(doc.get_content() for doc in docs)
     print("Question:", question)
     print("------")
@@ -204,6 +204,6 @@ def answer_question(question: str) -> str:
         print("Chunk:", doc.id)
         print(doc.page_content)
         print("------")
-    messages = build_qa_messages(question, docs_content)
+    messages = build_qa_messages(question, docs_content, langue)
     response = llm.invoke(messages)
     return response.content
