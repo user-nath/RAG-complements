@@ -149,7 +149,7 @@ def get_vector_store_info():
     }
 
 
-def retrieve(question: str):
+def retrieve(question: str, top_k: int = 5):
     """Retrieve documents similar to a question.
 
     Args:
@@ -158,7 +158,7 @@ def retrieve(question: str):
     Returns:
         list[TODO]: list of similar documents retrieved from the vector store
     """
-    retrieved_docs = vector_store.similarity_search(question)
+    retrieved_docs = vector_store.similarity_search(question, top_k=top_k)
     return retrieved_docs
 
 
@@ -199,7 +199,7 @@ def build_qa_messages(question: str, context: str, langue: str) -> list[str]:
     return messages
 
 
-def answer_question(question: str, langue:str) -> str:
+def answer_question(question: str, langue:str, top_k:int = 5) -> str:
     """Answer a question by retrieving similar documents in the store.
 
     Args:
@@ -209,7 +209,7 @@ def answer_question(question: str, langue:str) -> str:
         str: text of the answer
     """
     inspect_vector_store()
-    docs = retrieve(question)
+    docs = retrieve(question, top_k=top_k)
     docs_content = "\n\n".join(doc.page_content for doc in docs)
     print("Question:", question)
     print("------")
