@@ -4,9 +4,8 @@ import tempfile
 import streamlit as st
 import pandas as pd
 
-from rag.langchain import answer_question
-from rag.langchain import delete_file_from_store
-from rag.langchain import store_pdf_file
+import rag.langchain as langchain
+import rag.llamaindex as llamaindex
 
 st.set_page_config(
     page_title="Analyse de documents",
@@ -21,6 +20,7 @@ def main():
     # Titre et explications
     st.title("Analyse de documents")
     st.subheader("Analysez vos documents avec une IA en les chargeant dans l'application. Puis posez toutes vos questions.")
+
     
     # Téléversement de fichiers multiples
     uploaded_files = st.file_uploader(
