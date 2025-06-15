@@ -47,5 +47,16 @@ L’application permet également de collecter des feedbacks utilisateur sur la 
 pip install streamlit pandas langchain llama-index langchain_community pymupdf
 
 ---
+## Limitations & améliorations possibles
+
+-  **Suppression de documents non encore implémentée pour LlamaIndex.**
+-  **Stockage en mémoire ou basique :** actuellement, Langchain utilise un vecteur en mémoire et LlamaIndex une forme simple d’index. Il serait pertinent d’ajouter une base vectorielle persistante comme **FAISS**, **ChromaDB** ou **Pinecone**.
+-  **Pas de gestion multi-utilisateur** : l’application est mono-utilisateur et ne propose pas d’authentification.
+- **Pas d’historique ni de statistiques de feedbacks** : les interactions ne sont pas visualisables par l'utilisateur pour le moment.
+- **Support limité aux PDF** : les formats **Word**, **TXT**, ou **HTML** pourraient être pris en charge dans une version future.
+-  **Interface à améliorer** : ajout possible de la **traduction automatique**, d’un **mode sombre**, d’un meilleur affichage responsive, etc.
+- **Tests et CI/CD manquants** : ajout de **tests automatisés**, d’un pipeline de déploiement continu (CI/CD), et d’une gestion des erreurs plus robuste.
+
+
 
 
