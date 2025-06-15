@@ -47,14 +47,5 @@ L’application permet également de collecter des feedbacks utilisateur sur la 
 pip install streamlit pandas langchain llama-index langchain_community pymupdf
 
 ---
-## Limitations & améliorations possibles
-- La suppression des documents n’est pas encore implémentée pour LlamaIndex.
 
-- La recherche utilise un stockage en mémoire (Langchain) ou un vecteur simple (LlamaIndex) ; passage à une base vectorielle plus robuste possible (FAISS, Pinecone…).
-
-- Ajout d’authentification et gestion multi-utilisateurs.
-
-- Interface améliorée pour la gestion des documents et historique des questions/réponses.
-
-- Support d’autres formats de documents (Word, txt, HTML…).
 
