@@ -1,4 +1,4 @@
-import streamilt as st
+import streamlit as st
 
 
 from datetime import datetime
