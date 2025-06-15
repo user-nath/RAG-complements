@@ -1,25 +1,18 @@
 import streamlit as st
-
-
 from datetime import datetime
 
-from llama_index.core import VectorStoreIndex
-from llama_index.core import Settings
+from llama_index.core import VectorStoreIndex, Settings
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import TextNode
-from llama_index.core.vector_stores import SimpleVectorStore
-from llama_index.core.vector_stores import VectorStoreQuery
-from llama_index.embeddings.openai import AzureOpenAIEmbedding
+from llama_index.core.vector_stores import SimpleVectorStore, VectorStoreQuery
+from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.readers.file import PyMuPDFReader
-
 
 CHUNK_SIZE = 1_000
 CHUNK_OVERLAP = 200
 
-
 config = st.secrets
-
 
 llm = AzureOpenAI(
     model=config["chat_azure_deployment"],
@@ -29,9 +22,8 @@ llm = AzureOpenAI(
     api_version=config["chat_azure_api_version"],
 )
 
-# You need to deploy your own embedding model as well as your own chat completion model
 embedder = AzureOpenAIEmbedding(
-    model=config["embedding_azure_deployment"],
+    model="text-embedding-3-large",
     deployment_name=config["embedding_azure_deployment"],
     api_key=config["embedding_azure_api_key"],
     azure_endpoint=config["embedding_azure_endpoint"],
@@ -45,150 +37,107 @@ vector_store = SimpleVectorStore()
 
 
 def store_pdf_file(file_path: str, doc_name: str):
-    """Store a pdf file in the vector store.
-
-    Args:
-        file_path (str): file path to the PDF file
-    """
     loader = PyMuPDFReader()
     documents = loader.load(file_path)
 
     text_parser = SentenceSplitter(chunk_size=CHUNK_SIZE)
     text_chunks = []
-    # maintain relationship with source doc index, to help inject doc metadata in (3)
     doc_idxs = []
+
     for doc_idx, doc in enumerate(documents):
         cur_text_chunks = text_parser.split_text(doc.text)
         text_chunks.extend(cur_text_chunks)
         doc_idxs.extend([doc_idx] * len(cur_text_chunks))
-     
+
     nodes = []
     for idx, text_chunk in enumerate(text_chunks):
-        node = TextNode(
-            text=text_chunk,
-        )
+        node = TextNode(text=text_chunk)
         src_doc = documents[doc_idxs[idx]]
         node.metadata = src_doc.metadata
         nodes.append(node)
 
-    for node in nodes:  
+    for node in nodes:
         node_embedding = embedder.get_text_embedding(
             node.get_content(metadata_mode="all")
         )
         node.embedding = node_embedding
 
     vector_store.add(nodes)
-    return
 
 
 def delete_file_from_store(name: str) -> int:
-    raise NotImplemented('function not implemented for Llamaindex')
-    ids_to_remove = []
-    for (id, doc) in vector_store.store.items():
-        if name == doc['metadata']['document_name']:
-            ids_to_remove.append(id)
-    vector_store.delete(ids_to_remove)
-    #print('File deleted:', name)
-    return len(ids_to_remove)
+    raise NotImplementedError('function not implemented for Llamaindex')
 
 
-def inspect_vector_store(top_n: int=10) -> list:
-    raise NotImplemented('function not implemented for Llamaindex')
-    docs = []
-    for index, (id, doc) in enumerate(vector_store.store.items()):
-        if index < top_n:
-            docs.append({
-                'id': id,
-                'document_name': doc['metadata']['document_name'],
-                'insert_date': doc['metadata']['insert_date'],
-                'text': doc['text']
-                })
-            # docs have keys 'id', 'vector', 'text', 'metadata'
-            # print(f"{id} {doc['metadata']['document_name']}: {doc['text']}")
-        else:
-            break
-    return docs
+def inspect_vector_store(top_n: int = 10) -> list:
+    raise NotImplementedError('function not implemented for Llamaindex')
 
 
 def get_vector_store_info():
-    raise NotImplemented('function not implemented for Llamaindex')
-    nb_docs = 0
-    max_date, min_date = None, None
-    documents = set()
-    for (id, doc) in vector_store.store.items():
-        nb_docs += 1
-        if max_date is None or max_date < doc['metadata']['insert_date']:
-            max_date = doc['metadata']['insert_date']
-        if min_date is None or min_date > doc['metadata']['insert_date']:
-            min_date = doc['metadata']['insert_date']
-        documents.add(doc['metadata']['document_name'])
-    return {
-        'nb_chunks': nb_docs,
-        'min_insert_date': min_date,
-        'max_insert_date': max_date,
-        'nb_documents': len(documents)
-    }
+    raise NotImplementedError('function not implemented for Llamaindex')
 
 
-def retrieve(question: str, top_k : int = 5):
-    """Retrieve documents similar to a question.
-
-    Args:
-        question (str): text of the question
-
-    Returns:
-        list[TODO]: list of similar documents retrieved from the vector store
-    """
+def retrieve(question: str, top_k: int = 5):
     query_embedding = embedder.get_query_embedding(question)
 
     query_mode = "default"
-    # query_mode = "sparse"
-    # query_mode = "hybrid"
 
     vector_store_query = VectorStoreQuery(
-        query_embedding=query_embedding, similarity_top_k=5, mode=query_mode
+        query_embedding=query_embedding, similarity_top_k=top_k, mode=query_mode
     )
 
-    # returns a VectorStoreQueryResult
-    query_result = vector_store.query(vector_store_query)
-    return query_result.nodes
+    try:
+        query_result = vector_store.query(vector_store_query)
+    except Exception as e:
+        print(f"Erreur lors de la requête au vector store : {e}")
+        return []
 
-    # if query_result.nodes:
-    #     print(query_result.nodes[0].get_content())
-    # else:
-    #     print('No results')
+    if not query_result or not query_result.nodes:
+        print("Aucun résultat trouvé dans le vector store.")
+        return []
+
+    return query_result.nodes
 
 
 def build_qa_messages(question: str, context: str, langue: str) -> list[str]:
-    messages = [
-    (
-        "system",
-        "You are an assistant for question-answering tasks.",
-    ),
-    (
-        "system",
-        f"""Use the following pieces of retrieved context to answer the question.
-        If you don't know the answer, just say that you don't know.
+    langue_prompt = {
+        "Français": "Tu es un assistant IA qui répond toujours en français.",
+        "Anglais": "You are an AI assistant who always replies in English.",
+        "Espagnol": "Eres un asistente de IA que siempre responde en español.",
+        "Allemand": "Du bist ein KI-Assistent, der immer auf Deutsch antwortet."
+    }
+
+    task_prompt = {
+        "Français": f"""Utilise les extraits de contexte suivants pour répondre à la question.
+        Si tu ne sais pas répondre, dis que tu ne sais pas.
+        Utilise trois phrases maximum et reste concis.
+        {context}""",
+        "Anglais": f"""Use the following pieces of context to answer the question.
+        If you don't know the answer, just say you don't know.
         Use three sentences maximum and keep the answer concise.
-        Answerin{langue}""".format(context),
-    ),
-    (  
-        "user",
-        question
-    ),]
+        {context}""",
+        "Espagnol": f"""Usa los siguientes fragmentos de contexto para responder a la pregunta.
+        Si no sabes la respuesta, simplemente dilo.
+        Usa un máximo de tres frases y sé conciso.
+        {context}""",
+        "Allemand": f"""Verwende die folgenden Kontexte, um die Frage zu beantworten.
+        Wenn du die Antwort nicht weißt, gib dies an.
+        Antworte in höchstens drei Sätzen und sei prägnant.
+        {context}""",
+    }
+
+    messages = [
+        ("system", langue_prompt.get(langue, langue_prompt["Français"])),
+        ("user", question),
+    ]
     return messages
 
 
-def answer_question(question: str,langue: str, top_k: int=5) -> str:
-    """Answer a question by retrieving similar documents in the store.
+def answer_question(question: str, langue: str, top_k: int = 5) -> str:
+    docs = retrieve(question, top_k)
+    if not docs:
+        return "Désolé, je n'ai trouvé aucun document pertinent pour répondre à la question."
 
-    Args:
-        question (str): text of the question
-
-    Returns:
-        str: text of the answer
-    """
-    docs = retrieve(question,top_k=top_k)
     docs_content = "\n\n".join(doc.get_content() for doc in docs)
     print("Question:", question)
     print("------")
