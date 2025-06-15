@@ -1,3 +1,5 @@
+# app.py
+
 import streamlit as st
 import tempfile
 import os
@@ -41,6 +43,8 @@ if "question" not in st.session_state:
     st.session_state["question"] = ""
 if "answer" not in st.session_state:
     st.session_state["answer"] = ""
+if "langue" not in st.session_state:
+    st.session_state["langue"] = "Français"
 
 # Initialiser la base
 init_db()
@@ -48,10 +52,13 @@ init_db()
 # --- Choix du framework ---
 st.sidebar.title("Paramètres")
 selected_framework = st.sidebar.radio("Framework d'indexation :", ["langchain", "llamaindex"])
+selected_langue = st.sidebar.selectbox("Langue de réponse :", ["Français", "Anglais", "Espagnol", "Allemand"])
 
 if selected_framework != st.session_state["framework"]:
     st.session_state["framework"] = selected_framework
     st.session_state["stored_files"] = []
+
+st.session_state["langue"] = selected_langue
 
 # Associer dynamiquement le module
 framework_module = langchain if selected_framework == "langchain" else llamaindex
@@ -79,12 +86,11 @@ question = st.text_input("Posez votre question :")
 
 if st.button("Poser la question") and question:
     try:
-        answer = framework_module.answer_question(question)
+        answer = framework_module.answer_question(question, st.session_state["langue"])
         st.session_state["question"] = question
         st.session_state["answer"] = answer
-
-        st.markdown("### Réponse :")
-        st.write(answer)
+        st.markdown(f"**Réponse générée :**\n\n{answer}")
+        st.write(str(answer))
     except Exception as e:
         st.error(f"Erreur lors de la génération de la réponse : {e}")
 
@@ -94,7 +100,6 @@ if st.session_state["answer"]:
     if st.button("Envoyer le feedback"):
         save_feedback(st.session_state["question"], st.session_state["answer"], rating)
         st.success("Merci pour votre feedback !")
-        print(f"Feedback enregistré : {st.session_state['question']} | {rating}")
         st.session_state["question"] = ""
         st.session_state["answer"] = ""
 
