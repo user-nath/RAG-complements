@@ -2,7 +2,7 @@ langchain
 langchain-openai
 langchain_community
 llama-index
-llama-index==0.10.20
+llama-index==0.10.30
 pymupdf
 streamlit
 pyyaml
