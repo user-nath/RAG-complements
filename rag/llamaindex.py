@@ -1,4 +1,5 @@
-import yaml
+import streamilt as st
+
 
 from datetime import datetime
 
@@ -17,33 +18,24 @@ CHUNK_SIZE = 1_000
 CHUNK_OVERLAP = 200
 
 
-def read_config(file_path):
-    with open(file_path, 'r') as file:
-        try:
-            config = yaml.safe_load(file)
-            return config
-        except yaml.YAMLError as e:
-            print(f"Error reading YAML file: {e}")
-            return None
-
-config = read_config("secrets/config.yaml")
+config = st.secrets
 
 
 llm = AzureOpenAI(
-    model=config["chat"]["azure_deployment"],
-    deployment_name=config["chat"]["azure_deployment"],
-    api_key=config["chat"]["azure_api_key"],
-    azure_endpoint=config["chat"]["azure_endpoint"],
-    api_version=config["chat"]["azure_api_version"],
+    model=config["chat_azure_deployment"],
+    deployment_name=config["chat_azure_deployment"],
+    api_key=config["chat_azure_api_key"],
+    azure_endpoint=config["chat_azure_endpoint"],
+    api_version=config["chat_azure_api_version"],
 )
 
 # You need to deploy your own embedding model as well as your own chat completion model
 embedder = AzureOpenAIEmbedding(
-    model=config["embedding"]["azure_deployment"],              # for the moment, same as deployment
-    deployment_name=config["embedding"]["azure_deployment"],
-    api_key=config["embedding"]["azure_api_key"],
-    azure_endpoint=config["embedding"]["azure_endpoint"],
-    api_version=config["embedding"]["azure_api_version"],
+    model=config["embedding_azure_deployment"],
+    deployment_name=config["embedding_azure_deployment"],
+    api_key=config["embedding_azure_api_key"],
+    azure_endpoint=config["embedding_azure_endpoint"],
+    api_version=config["embedding_azure_api_version"],
 )
 
 Settings.llm = llm
