@@ -4,7 +4,6 @@ import streamlit as st
 import tempfile
 import os
 import sqlite3
-import pandas as pd
 
 import rag.langchain as langchain
 import rag.llamaindex as llamaindex
